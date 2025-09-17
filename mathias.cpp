@@ -55,66 +55,104 @@ void printHand(const std::vector<Card>& hand, bool hideFirst = false) {
 }
 
 int main() {
-    std::vector<Card> deck = createDeck();
-    shuffleDeck(deck);
+    int balance = 100;
+    std::cout << "Welcome to Blackjack! Starting balance: $" << balance << std::endl;
 
-    std::vector<Card> playerHand, dealerHand;
-    playerHand.push_back(deck.back()); deck.pop_back();
-    dealerHand.push_back(deck.back()); deck.pop_back();
-    playerHand.push_back(deck.back()); deck.pop_back();
-    dealerHand.push_back(deck.back()); deck.pop_back();
-
-    std::cout << "Dealer's hand: ";
-    printHand(dealerHand, true);
-    std::cout << "Your hand: ";
-    printHand(playerHand);
-    std::cout << "Your total: " << handValue(playerHand) << std::endl;
-
-    // Player's turn
-    while (true) {
-        if (handValue(playerHand) == 21) {
-            std::cout << "Blackjack! You win!\n";
-            return 0;
+    while (balance > 0) {
+        int bet = 0;
+        while (true) {
+            std::cout << "Enter your bet (balance: $" << balance << "): ";
+            std::cin >> bet;
+            if (bet > 0 && bet <= balance) break;
+            std::cout << "Invalid bet. Try again.\n";
         }
-        if (handValue(playerHand) > 21) {
-            std::cout << "Bust! You lose.\n";
-            return 0;
+
+        std::vector<Card> deck = createDeck();
+        shuffleDeck(deck);
+
+        std::vector<Card> playerHand, dealerHand;
+        playerHand.push_back(deck.back()); deck.pop_back();
+        dealerHand.push_back(deck.back()); deck.pop_back();
+        playerHand.push_back(deck.back()); deck.pop_back();
+        dealerHand.push_back(deck.back()); deck.pop_back();
+
+        std::cout << "Dealer's hand: ";
+        printHand(dealerHand, true);
+        std::cout << "Your hand: ";
+        printHand(playerHand);
+        std::cout << "Your total: " << handValue(playerHand) << std::endl;
+
+        // Player's turn
+        bool playerBust = false, playerBlackjack = false;
+        while (true) {
+            int playerVal = handValue(playerHand);
+            if (playerVal == 21) {
+                std::cout << "Blackjack! You win!\n";
+                playerBlackjack = true;
+                break;
+            }
+            if (playerVal > 21) {
+                std::cout << "Bust! You lose.\n";
+                playerBust = true;
+                break;
+            }
+            std::cout << "Hit or stand? (h/s): ";
+            char choice;
+            std::cin >> choice;
+            if (choice == 'h') {
+                playerHand.push_back(deck.back()); deck.pop_back();
+                std::cout << "Your hand: ";
+                printHand(playerHand);
+                std::cout << "Your total: " << handValue(playerHand) << std::endl;
+            } else if (choice == 's') {
+                break;
+            }
         }
-        std::cout << "Hit or stand? (h/s): ";
-        char choice;
-        std::cin >> choice;
-        if (choice == 'h') {
-            playerHand.push_back(deck.back()); deck.pop_back();
-            std::cout << "Your hand: ";
-            printHand(playerHand);
-            std::cout << "Your total: " << handValue(playerHand) << std::endl;
-        } else if (choice == 's') {
+
+        // Dealer's turn
+        bool dealerBust = false;
+        if (!playerBust && !playerBlackjack) {
+            std::cout << "Dealer's hand: ";
+            printHand(dealerHand);
+            std::cout << "Dealer's total: " << handValue(dealerHand) << std::endl;
+            while (handValue(dealerHand) < 17) {
+                dealerHand.push_back(deck.back()); deck.pop_back();
+                std::cout << "Dealer hits: ";
+                printHand(dealerHand);
+                std::cout << "Dealer's total: " << handValue(dealerHand) << std::endl;
+            }
+        }
+
+        int playerTotal = handValue(playerHand);
+        int dealerTotal = handValue(dealerHand);
+
+        if (playerBlackjack) {
+            balance += bet * 3 / 2; // 3:2 payout
+        } else if (playerBust) {
+            balance -= bet;
+        } else if (dealerTotal > 21) {
+            std::cout << "Dealer busts! You win!\n";
+            balance += bet;
+        } else if (dealerTotal > playerTotal) {
+            std::cout << "Dealer wins.\n";
+            balance -= bet;
+        } else if (dealerTotal < playerTotal) {
+            std::cout << "You win!\n";
+            balance += bet;
+        } else {
+            std::cout << "Push (tie).\n";
+            // No balance change
+        }
+
+        std::cout << "Current balance: $" << balance << std::endl;
+        if (balance == 0) {
+            std::cout << "You are out of money! Game over.\n";
             break;
         }
-    }
-
-    // Dealer's turn
-    std::cout << "Dealer's hand: ";
-    printHand(dealerHand);
-    std::cout << "Dealer's total: " << handValue(dealerHand) << std::endl;
-    while (handValue(dealerHand) < 17) {
-        dealerHand.push_back(deck.back()); deck.pop_back();
-        std::cout << "Dealer hits: ";
-        printHand(dealerHand);
-        std::cout << "Dealer's total: " << handValue(dealerHand) << std::endl;
-    }
-
-    int playerTotal = handValue(playerHand);
-    int dealerTotal = handValue(dealerHand);
-
-    if (dealerTotal > 21) {
-        std::cout << "Dealer busts! You win!\n";
-    } else if (dealerTotal > playerTotal) {
-        std::cout << "Dealer wins.\n";
-    } else if (dealerTotal < playerTotal) {
-        std::cout << "You win!\n";
-    } else {
-        std::cout << "Push (tie).\n";
+        std::cout << "Play another round? (y/n): ";
+        char again;
+        std::cin >> again;
+        if (again != 'y' && again != 'Y') break;
     }
     return 0;
 }
