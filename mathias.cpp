@@ -143,7 +143,7 @@ int main() {
             std::cout << "Push (tie).\n";
             // No balance change
         }
-
+  
         std::cout << "Current balance: $" << balance << std::endl;
         if (balance == 0) {
             std::cout << "You are out of money! Game over.\n";
